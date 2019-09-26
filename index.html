@@ -1,13 +1,19 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="white">
+<meta name="apple-touch-fullscreen" content="yes">  <!-- hide safari lower hud - doesn't seem to work!! -->
+<link rel="apple-touch-icon" href="lib/app/res/images/apple-touch-icon-iphone-retina.png">
+
 <style type="text/css">
 .result { font-family: monospace; display: inline-block; margin-left: 0.3em; margin-bottom: 0.3em; padding: 0.1em; min-width: 5em; }
 .ok { background-color: limegreen; }
 .slow { background-color: #080; }
 .slower { background-color: orange; }
-.poor { background-color: red; }
-.bad { background-color: darkred; }
+.poor { background-color: #C0000; color: white; }
+.bad { background-color: #80000; color: white; }
+.error { background-color: #F00000; color: white; }
 </style>
 </head>
 <body id="results">
@@ -31,10 +37,11 @@ function ping() {
 	prev = div;
 
 	var xhr = new XMLHttpRequest();
+	xhr.timeout = 5000;
 	xhr.open("GET", `ping.xml?${start}`);
 	xhr.addEventListener("readystatechange", (response) => {
+		var ms = Date.now() - start;
 		if (xhr.readyState == 2) {
-			var ms = Date.now() - start;
 			div.innerText = `${pings} ${ms} ms`;
 			if (ms < 50) div.className += ' ok';
 			else if (ms < 100) div.className += ' slow';
@@ -42,6 +49,10 @@ function ping() {
 			else if (ms < 500) div.className += ' poor';
 			else div.className += ' bad';
 			pings++;
+		}
+		if (xhr.readyState == 4 && xhr.status == 0) {
+			div.innerText = `${pings} ERR`;
+			div.className += ' error';
 		}
 	});
 	xhr.send();
