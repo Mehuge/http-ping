@@ -7,26 +7,47 @@
 <link rel="apple-touch-icon" href="lib/app/res/images/apple-touch-icon-iphone-retina.png">
 
 <style type="text/css">
-.result { font-family: monospace; display: inline-block; margin-left: 0.3em; margin-bottom: 0.3em; padding: 0.1em; min-width: 5em; }
+.result { font-family: monospace; margin-left: 0.3em; margin-bottom: 0.3em; padding: 0.1em; min-width: 5em; color: white; }
 .ok { background-color: limegreen; }
 .slow { background-color: #080; }
 .slower { background-color: orange; }
-.poor { background-color: #C0000; color: white; }
-.bad { background-color: #80000; color: white; }
-.error { background-color: #F00000; color: white; }
+.poor { background-color: #C00; }
+.bad { background-color: #800; }
+.error { background-color: #F00; }
 </style>
 </head>
 <body id="results">
 </body>
 
 <script>
+
+var geo = navigator.geolocation;
+var pos;
+geo.watchPosition(p => pos = p, e => pos = undefined, {
+	enableHighAccuracy: true,
+	maximumAge: 60000,
+	timeout: 30000
+});
+
+var results = [];
+
 var pings = 0;
 var tbody = document.getElementById("result");
 var prev = null;
-function ping() {
-	var start = Date.now();
 
-	var div = document.createElement("div");
+function r(r) {
+	let text = `${(new Date(r.start)).toISOString().substr(0,19).replace("T"," ")}`
+	text += ' ' + results.length;
+	text += r.ms == -1 ? ' ERR' : ` ${r.ms}ms`;
+	text += r.pos ? ` ${r.pos.coords.longitude}, ${r.pos.coords.latitude} (${r.pos.coords.accuracy})` : '';
+	return text;
+}
+
+
+function ping() {
+	const start = Date.now();
+
+	const div = document.createElement("div");
 	div.className = 'result';
 	div.innerText = `${pings} ...`;
 	if (prev) {
@@ -36,27 +57,34 @@ function ping() {
 	}
 	prev = div;
 
-	var xhr = new XMLHttpRequest();
+	const xhr = new XMLHttpRequest();
 	xhr.timeout = 5000;
 	xhr.open("GET", `ping.xml?${start}`);
 	xhr.addEventListener("readystatechange", (response) => {
-		var ms = Date.now() - start;
+		const ms = Date.now() - start;
+		let result;
+
 		if (xhr.readyState == 2) {
-			div.innerText = `${pings} ${ms} ms`;
+			result = { start, ms, pos };
+			div.innerText = r(result);
 			if (ms < 50) div.className += ' ok';
 			else if (ms < 100) div.className += ' slow';
 			else if (ms < 200) div.className += ' slower';
 			else if (ms < 500) div.className += ' poor';
 			else div.className += ' bad';
-			pings++;
+			results.push(result);
+			console.dir(result);
 		}
 		if (xhr.readyState == 4 && xhr.status == 0) {
-			div.innerText = `${pings} ERR`;
+			result = { start, ms: -1, pos };
+			div.innerText = r(result);
 			div.className += ' error';
+			results.push(result);
+			console.dir(result);
 		}
 	});
 	xhr.send();
 }
-setInterval(ping, 5000);
+setInterval(ping, 1000);
 </script>
 </html>
