@@ -23,7 +23,12 @@ function ping() {
 	var div = document.createElement("div");
 	div.className = 'result';
 	div.innerText = `${pings} ...`;
-	document.body.appendChild(div);
+	if (prev) {
+		document.body.insertBefore(div, prev);
+	} else {
+		document.body.appendChild(div);
+	}
+	prev = div;
 
 	var xhr = new XMLHttpRequest();
 	xhr.open("GET", `ping.xml?${start}`);
